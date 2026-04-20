@@ -5,21 +5,9 @@ import type { AnyCriterion, ICDConcept, LabConcept, DrugConcept } from "../../li
 
 type SearchDomain = "diagnosis" | "lab" | "prescription";
 
-const DOMAINS: {
-  id: SearchDomain;
-  label: string;
-  badge: string;
-  badgeBg: string;
-  badgeText: string;
-  hoverBg: string;
-  hoverBorder: string;
-  codeBg: string;
-  codeText: string;
-  plusColor: string;
-  placeholder: string;
-}[] = [
+const DOMAINS = [
   {
-    id: "diagnosis",
+    id: "diagnosis" as SearchDomain,
     label: "Diagnoses",
     badge: "Dx",
     badgeBg: "bg-blue-50",
@@ -28,11 +16,11 @@ const DOMAINS: {
     hoverBorder: "hover:border-blue-100",
     codeBg: "bg-blue-50 border-blue-100",
     codeText: "text-blue-700",
-    plusColor: "group-hover:text-blue-500",
+    plusHover: "group-hover:text-blue-500",
     placeholder: "Search by diagnosis name or ICD code…",
   },
   {
-    id: "lab",
+    id: "lab" as SearchDomain,
     label: "Lab Tests",
     badge: "Lab",
     badgeBg: "bg-emerald-50",
@@ -41,11 +29,11 @@ const DOMAINS: {
     hoverBorder: "hover:border-emerald-100",
     codeBg: "bg-emerald-50 border-emerald-100",
     codeText: "text-emerald-700",
-    plusColor: "group-hover:text-emerald-500",
+    plusHover: "group-hover:text-emerald-500",
     placeholder: "Search by test name or code…",
   },
   {
-    id: "prescription",
+    id: "prescription" as SearchDomain,
     label: "Medications",
     badge: "Rx",
     badgeBg: "bg-violet-50",
@@ -54,7 +42,7 @@ const DOMAINS: {
     hoverBorder: "hover:border-violet-100",
     codeBg: "bg-violet-50 border-violet-100",
     codeText: "text-violet-700",
-    plusColor: "group-hover:text-violet-500",
+    plusHover: "group-hover:text-violet-500",
     placeholder: "Search by medication name…",
   },
 ];
@@ -72,24 +60,22 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
   const [results, setResults] = useState<(ICDConcept | LabConcept | DrugConcept)[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-  const activeDomain = DOMAINS.find((d) => d.id === domain)!;
+  const d = DOMAINS.find((x) => x.id === domain)!;
 
-  // Auto-focus & reset when drawer opens
+  // Auto-focus + reset on open
   useEffect(() => {
     if (open) {
       setQuery("");
       setResults([]);
-      setTimeout(() => inputRef.current?.focus(), 150);
+      const t = setTimeout(() => inputRef.current?.focus(), 150);
+      return () => clearTimeout(t);
     }
   }, [open]);
 
-  // Debounced search on query/domain change
+  // Debounced search
   useEffect(() => {
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    const timer = setTimeout(async () => {
+    if (!query.trim()) { setResults([]); return; }
+    const t = setTimeout(async () => {
       setLoading(true);
       try {
         if (domain === "diagnosis") setResults(await conceptsApi.searchICD(query));
@@ -101,8 +87,17 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
         setLoading(false);
       }
     }, 300);
-    return () => clearTimeout(timer);
+    return () => clearTimeout(t);
   }, [query, domain]);
+
+  // Close on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    if (open) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   function addCriterion(row: ICDConcept | LabConcept | DrugConcept) {
     if (domain === "diagnosis") {
@@ -130,43 +125,31 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
   }
 
   function getSubtitle(row: ICDConcept | LabConcept | DrugConcept): string {
-    const count = row.patient_count.toLocaleString();
-    if ("result_unit" in row && row.result_unit)
-      return `${count} patients · ${row.result_unit}`;
-    if ("drug_group_name" in row && row.drug_group_name)
-      return `${count} patients · ${row.drug_group_name}`;
-    return `${count} patients`;
+    const n = row.patient_count.toLocaleString();
+    if ("result_unit" in row && row.result_unit) return `${n} patients · ${row.result_unit}`;
+    if ("drug_group_name" in row && row.drug_group_name) return `${n} patients · ${row.drug_group_name}`;
+    return `${n} patients`;
   }
-
-  const plusIcon = (
-    <svg className={`w-4 h-4 text-slate-300 ${activeDomain.plusColor} shrink-0 transition-colors`} viewBox="0 0 20 20" fill="currentColor">
-      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-    </svg>
-  );
 
   return (
     <>
       {/* Backdrop */}
-      {open && (
-        <div
-          className="fixed inset-0 bg-black/20 backdrop-blur-[1px] z-40 transition-opacity"
-          onClick={onClose}
-        />
-      )}
-
-      {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 h-full w-[420px] bg-white shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
+        className={`fixed inset-0 bg-black/25 z-40 transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+        onClick={onClose}
+      />
+
+      {/* Drawer panel */}
+      <div
+        className={`fixed top-0 right-0 h-full w-[400px] bg-white z-50 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="px-6 py-5 border-b border-slate-200 shrink-0">
+        <div className="shrink-0 px-5 py-4 border-b border-slate-200">
           <div className="flex items-center justify-between mb-1">
-            <h2 className="font-semibold text-slate-900 text-base">Add criteria</h2>
+            <h2 className="font-semibold text-slate-900">Add criteria</h2>
             <button
               onClick={onClose}
-              aria-label="Close"
+              aria-label="Close drawer"
               className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -183,109 +166,88 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
         </div>
 
         {/* Domain tabs */}
-        <div className="px-6 pt-4 shrink-0">
+        <div className="shrink-0 px-5 pt-4">
           <div className="flex gap-1 p-1 bg-slate-100 rounded-xl">
-            {DOMAINS.map((d) => (
+            {DOMAINS.map((x) => (
               <button
-                key={d.id}
-                onClick={() => {
-                  setDomain(d.id);
-                  setQuery("");
-                  setResults([]);
-                  setTimeout(() => inputRef.current?.focus(), 50);
-                }}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${
-                  domain === d.id
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700"
-                }`}
+                key={x.id}
+                onClick={() => { setDomain(x.id); setQuery(""); setResults([]); setTimeout(() => inputRef.current?.focus(), 50); }}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${domain === x.id ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
               >
-                {d.label}
+                {x.label}
               </button>
             ))}
           </div>
         </div>
 
         {/* Search input */}
-        <div className="px-6 py-4 shrink-0">
+        <div className="shrink-0 px-5 py-3">
           <div className="relative">
-            <svg
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
             </svg>
             <input
               ref={inputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={activeDomain.placeholder}
+              placeholder={d.placeholder}
               className="w-full pl-10 pr-4 py-2.5 border border-slate-200 rounded-xl text-sm placeholder:text-slate-400 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-slate-50"
             />
           </div>
         </div>
 
-        {/* Results */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        {/* Results area */}
+        <div className="flex-1 overflow-y-auto px-5 pb-5">
 
-          {/* Skeleton while loading */}
+          {/* Loading skeletons */}
           {loading && (
             <div className="flex flex-col gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-[60px] bg-slate-100 rounded-xl animate-pulse" />
+                <div key={i} className="h-14 bg-slate-100 rounded-xl animate-pulse" />
               ))}
             </div>
           )}
 
           {/* No results */}
-          {!loading && query.trim() && results.length === 0 && (
-            <div className="text-center py-14">
+          {!loading && query.trim() !== "" && results.length === 0 && (
+            <div className="text-center py-12">
               <p className="text-slate-600 text-sm font-medium">No results found</p>
-              <p className="text-slate-400 text-xs mt-1">
-                Try a different term or check the spelling
-              </p>
+              <p className="text-slate-400 text-xs mt-1">Try a different term or check spelling</p>
             </div>
           )}
 
-          {/* Empty / prompt to search */}
-          {!loading && !query.trim() && (
-            <div className="text-center py-14">
-              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-3 ${activeDomain.badgeBg}`}>
-                <span className={`text-xs font-bold ${activeDomain.badgeText}`}>
-                  {activeDomain.badge}
-                </span>
+          {/* Prompt to search */}
+          {!loading && query.trim() === "" && (
+            <div className="text-center py-12">
+              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-3 ${d.badgeBg}`}>
+                <span className={`text-xs font-bold ${d.badgeText}`}>{d.badge}</span>
               </div>
-              <p className="text-slate-700 text-sm font-medium">Search {activeDomain.label}</p>
-              <p className="text-slate-400 text-xs mt-1">
-                Type above to find matching concepts
-              </p>
+              <p className="text-slate-700 text-sm font-medium">Search {d.label}</p>
+              <p className="text-slate-400 text-xs mt-1">Type above to find matching concepts</p>
             </div>
           )}
 
-          {/* Result list */}
+          {/* Results list */}
           {!loading && results.length > 0 && (
-            <div className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-1">
               {results.map((row) => {
                 const code = getCode(row);
-                const name = getName(row);
-                const subtitle = getSubtitle(row);
                 return (
                   <button
                     key={code}
                     onClick={() => addCriterion(row)}
-                    className={`flex items-center gap-3 px-4 py-3 rounded-xl text-left border border-transparent transition-all group ${activeDomain.hoverBg} ${activeDomain.hoverBorder}`}
+                    className={`flex items-center gap-3 px-3 py-3 rounded-xl text-left border border-transparent transition-all group ${d.hoverBg} ${d.hoverBorder}`}
                   >
-                    <span
-                      className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${activeDomain.codeBg} ${activeDomain.codeText}`}
-                    >
+                    <span className={`text-xs font-mono font-bold px-2 py-1 rounded-lg border shrink-0 ${d.codeBg} ${d.codeText}`}>
                       {code}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-slate-800 font-medium truncate">{name}</p>
-                      <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>
+                      <p className="text-sm text-slate-800 font-medium truncate">{getName(row)}</p>
+                      <p className="text-xs text-slate-400 mt-0.5">{getSubtitle(row)}</p>
                     </div>
-                    {plusIcon}
+                    <svg className={`w-4 h-4 text-slate-300 ${d.plusHover} shrink-0 transition-colors`} viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                    </svg>
                   </button>
                 );
               })}

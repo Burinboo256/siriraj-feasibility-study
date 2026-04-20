@@ -46,19 +46,20 @@ export default function FeasibilityBar() {
   }
 
   return (
-    <div className="border-t border-slate-200 bg-white shadow-[0_-1px_8px_0_rgb(0,0,0,0.06)]">
+    <div className="shrink-0 border-t border-slate-200 bg-white shadow-md">
       <div className="max-w-3xl mx-auto px-6 py-4">
         <div className="flex items-center gap-4">
+
           {/* Patient count */}
-          <div className="flex items-baseline gap-2 min-w-[160px]">
+          <div className="flex items-baseline gap-2 min-w-40">
             {store.isLoading ? (
               <div className="flex items-baseline gap-2">
-                <div className="w-24 h-8 bg-slate-100 rounded-lg animate-pulse" />
+                <div className="w-20 h-8 bg-slate-100 rounded-lg animate-pulse" />
                 <div className="w-14 h-4 bg-slate-100 rounded animate-pulse" />
               </div>
             ) : hasCount ? (
               <>
-                <span className={`text-3xl font-bold tabular-nums ${dbOffline ? "text-slate-400" : "text-slate-900"}`}>
+                <span className={`text-3xl font-bold tabular-nums leading-none ${dbOffline ? "text-slate-400" : "text-slate-900"}`}>
                   {dbOffline ? "N/A" : count!.toLocaleString()}
                 </span>
                 <span className="text-slate-500 text-sm">patients</span>
@@ -71,7 +72,7 @@ export default function FeasibilityBar() {
               </>
             ) : (
               <>
-                <span className="text-3xl font-bold text-slate-200">—</span>
+                <span className="text-3xl font-bold text-slate-200 leading-none">—</span>
                 <span className="text-slate-400 text-sm">run count to see results</span>
               </>
             )}
@@ -79,18 +80,14 @@ export default function FeasibilityBar() {
 
           <div className="flex-1" />
 
-          {/* SQL toggle */}
+          {/* View SQL */}
           {store.generatedSQL && (
             <button
               onClick={() => setSqlOpen((v) => !v)}
               className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
             >
               <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                <path
-                  fillRule="evenodd"
-                  d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
+                <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
               View SQL
               <svg
@@ -98,11 +95,7 @@ export default function FeasibilityBar() {
                 viewBox="0 0 20 20"
                 fill="currentColor"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  clipRule="evenodd"
-                />
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>
           )}
@@ -119,12 +112,9 @@ export default function FeasibilityBar() {
                 : "bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:border-slate-300"
             }`}
           >
-            {saveStatus === "saving"
-              ? "Saving…"
-              : saveStatus === "saved"
-              ? "Saved ✓"
-              : saveStatus === "error"
-              ? "Error — retry"
+            {saveStatus === "saving" ? "Saving…"
+              : saveStatus === "saved" ? "Saved ✓"
+              : saveStatus === "error" ? "Error — retry"
               : "Save"}
           </button>
 
@@ -142,9 +132,7 @@ export default function FeasibilityBar() {
                 </svg>
                 Running…
               </>
-            ) : (
-              "Run Count"
-            )}
+            ) : "Run Count"}
           </button>
         </div>
 

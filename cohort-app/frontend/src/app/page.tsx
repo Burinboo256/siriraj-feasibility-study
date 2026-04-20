@@ -45,9 +45,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    // h-screen + overflow-hidden = FeasibilityBar is always pinned at bottom
+    // main gets overflow-y-auto so only the content area scrolls
+    <div className="h-screen flex flex-col bg-slate-50 overflow-hidden">
+
       {/* Topbar */}
-      <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center gap-3 sticky top-0 z-30 h-14">
+      <header className="shrink-0 bg-white border-b border-slate-200 px-6 h-14 flex items-center gap-3">
         <button
           onClick={() => setView("dashboard")}
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors px-2 py-1.5 rounded-lg hover:bg-slate-100"
@@ -58,13 +61,10 @@ export default function App() {
           My Cohorts
         </button>
 
-        <svg className="w-4 h-4 text-slate-300" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-        </svg>
+        <span className="text-slate-300 select-none">/</span>
 
-        {/* Inline editable cohort name */}
         <input
-          className="font-semibold text-slate-900 bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white rounded-lg px-2 py-1 text-sm min-w-[200px] max-w-sm"
+          className="font-semibold text-slate-900 bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white rounded-lg px-2 py-1 text-sm min-w-[180px] max-w-sm"
           value={store.name}
           onChange={(e) => store.setName(e.target.value)}
           placeholder="Cohort name"
@@ -84,53 +84,50 @@ export default function App() {
         </div>
       </header>
 
-      {/* Builder workspace */}
-      <main className="flex-1 flex flex-col max-w-3xl mx-auto w-full px-6 py-8 gap-6">
+      {/* Scrollable content area */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto w-full px-6 py-8 flex flex-col gap-6">
 
-        {/* Research question field */}
-        <div>
-          <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
-            Research question / notes
-          </label>
-          <textarea
-            className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm placeholder:text-slate-400 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white shadow-sm"
-            rows={2}
-            value={store.description}
-            onChange={(e) => store.setDescription(e.target.value)}
-            placeholder="Describe the research question this cohort answers…"
+          {/* Research question */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+              Research question / notes
+            </label>
+            <textarea
+              className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm placeholder:text-slate-400 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white shadow-sm"
+              rows={2}
+              value={store.description}
+              onChange={(e) => store.setDescription(e.target.value)}
+              placeholder="Describe the research question this cohort answers…"
+            />
+          </div>
+
+          {/* Inclusion */}
+          <CriteriaSection
+            type="include"
+            criteria={store.include.criteria as AnyCriterion[]}
+            operator={store.include.operator}
+            onOperatorChange={store.setIncludeOperator}
+            onRemove={store.removeIncludeCriterion}
+            onAdd={() => openDrawer("include")}
+          />
+
+          {/* Exclusion */}
+          <CriteriaSection
+            type="exclude"
+            criteria={store.exclude.criteria as AnyCriterion[]}
+            operator={store.exclude.operator}
+            onOperatorChange={store.setExcludeOperator}
+            onRemove={store.removeExcludeCriterion}
+            onAdd={() => openDrawer("exclude")}
           />
         </div>
-
-        {/* Inclusion criteria */}
-        <CriteriaSection
-          type="include"
-          criteria={store.include.criteria as AnyCriterion[]}
-          operator={store.include.operator}
-          onOperatorChange={store.setIncludeOperator}
-          onRemove={store.removeIncludeCriterion}
-          onAdd={() => openDrawer("include")}
-        />
-
-        {/* Exclusion criteria */}
-        <CriteriaSection
-          type="exclude"
-          criteria={store.exclude.criteria as AnyCriterion[]}
-          operator={store.exclude.operator}
-          onOperatorChange={store.setExcludeOperator}
-          onRemove={store.removeExcludeCriterion}
-          onAdd={() => openDrawer("exclude")}
-        />
-
-        {/* Bottom spacer so sticky bar doesn't overlap content */}
-        <div className="h-4" />
       </main>
 
-      {/* Sticky feasibility bar */}
-      <div className="sticky bottom-0 z-30">
-        <FeasibilityBar />
-      </div>
+      {/* Feasibility bar — always pinned at bottom (no sticky needed) */}
+      <FeasibilityBar />
 
-      {/* Search drawer (slide-over) */}
+      {/* Search drawer */}
       <SearchDrawer
         open={drawerOpen}
         target={addTarget}
@@ -164,11 +161,7 @@ function Dashboard({
 
   async function handleLoad(id: string) {
     setLoadingId(id);
-    try {
-      await onLoad(id);
-    } finally {
-      setLoadingId(null);
-    }
+    await onLoad(id).catch(() => setLoadingId(null));
   }
 
   return (
@@ -177,8 +170,7 @@ function Dashboard({
       <header className="bg-white border-b border-slate-200 px-8 py-5">
         <div className="max-w-4xl mx-auto flex items-center">
           <div className="flex items-center gap-3">
-            {/* Logo mark */}
-            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-white" viewBox="0 0 20 20" fill="currentColor">
                 <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                 <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd" />
@@ -204,7 +196,7 @@ function Dashboard({
 
       <main className="max-w-4xl mx-auto px-8 py-10">
 
-        {/* Hero — shown when no cohorts exist */}
+        {/* Empty state */}
         {!loadingList && cohorts.length === 0 && (
           <div className="text-center py-20 mb-10 border-2 border-dashed border-slate-200 rounded-2xl bg-white">
             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mx-auto mb-4">
@@ -227,25 +219,22 @@ function Dashboard({
 
         {/* Cohort list */}
         {(loadingList || cohorts.length > 0) && (
-          <div>
+          <div className="mb-10">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold text-slate-900 text-sm">Saved cohorts</h2>
               {!loadingList && (
-                <span className="text-xs text-slate-400">{cohorts.length} cohort{cohorts.length !== 1 ? "s" : ""}</span>
+                <span className="text-xs text-slate-400">
+                  {cohorts.length} cohort{cohorts.length !== 1 ? "s" : ""}
+                </span>
               )}
             </div>
 
             <div className="flex flex-col gap-2.5">
-              {/* Skeletons while loading */}
               {loadingList &&
                 [1, 2, 3].map((i) => (
-                  <div
-                    key={i}
-                    className="h-[72px] bg-white rounded-2xl border border-slate-200 animate-pulse"
-                  />
+                  <div key={i} className="h-[72px] bg-white rounded-2xl border border-slate-200 animate-pulse" />
                 ))}
 
-              {/* Cohort cards */}
               {!loadingList &&
                 cohorts.map((cohort) => (
                   <button
@@ -254,7 +243,6 @@ function Dashboard({
                     disabled={loadingId === cohort.id}
                     className="flex items-center gap-4 px-5 py-4 bg-white rounded-2xl border border-slate-200 hover:border-slate-300 hover:shadow-sm transition-all text-left group disabled:opacity-60"
                   >
-                    {/* Icon */}
                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
                       <svg className="w-4 h-4 text-blue-600" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
@@ -262,7 +250,6 @@ function Dashboard({
                       </svg>
                     </div>
 
-                    {/* Text */}
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-slate-900 text-sm truncate">{cohort.name}</p>
                       {cohort.description ? (
@@ -272,7 +259,6 @@ function Dashboard({
                       )}
                     </div>
 
-                    {/* Chevron */}
                     {loadingId === cohort.id ? (
                       <svg className="w-4 h-4 text-slate-400 animate-spin shrink-0" viewBox="0 0 24 24" fill="none">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -289,24 +275,12 @@ function Dashboard({
           </div>
         )}
 
-        {/* How it works — shown alongside cohorts as a guide */}
-        <div className="mt-10 grid grid-cols-3 gap-4">
+        {/* How it works */}
+        <div className="grid grid-cols-3 gap-4">
           {[
-            {
-              step: "1",
-              title: "Define population",
-              desc: "Add diagnoses, labs, or medications your target patients must have",
-            },
-            {
-              step: "2",
-              title: "Narrow with exclusions",
-              desc: "Exclude patients who don't fit your study criteria",
-            },
-            {
-              step: "3",
-              title: "Check feasibility",
-              desc: "Run a count to see how many patients match and review the SQL",
-            },
+            { step: "1", title: "Define population", desc: "Add diagnoses, labs, or medications your target patients must have" },
+            { step: "2", title: "Narrow with exclusions", desc: "Exclude patients who don't fit your study criteria" },
+            { step: "3", title: "Check feasibility", desc: "Run a count to see how many patients match and review the SQL" },
           ].map((item) => (
             <div key={item.step} className="p-4 bg-white rounded-2xl border border-slate-200">
               <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center mb-3">
