@@ -167,9 +167,9 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
             <button
               onClick={onClose}
               aria-label="Close"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             >
-              <svg className="w-5 h-5" viewBox="0 0 20 20" fill="currentColor">
+              <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
               </svg>
             </button>
@@ -251,8 +251,8 @@ export default function SearchDrawer({ open, target, onAdd, onClose }: Props) {
           {/* Empty / prompt to search */}
           {!loading && !query.trim() && (
             <div className="text-center py-14">
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 ${activeDomain.badgeBg}`}>
-                <span className={`text-base font-bold ${activeDomain.badgeText}`}>
+              <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-3 ${activeDomain.badgeBg}`}>
+                <span className={`text-xs font-bold ${activeDomain.badgeText}`}>
                   {activeDomain.badge}
                 </span>
               </div>
