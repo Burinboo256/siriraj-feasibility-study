@@ -30,6 +30,18 @@ A clinical data feasibility study using data from Siriraj Hospital (`SiIMC_MGHT`
 | `prescription_order` | Pharmacy | OPD/IPD prescription orders |
 | `lab_result` | Laboratory | Laboratory test results |
 
+## Key design decisions 
+
+| Concern | Description |
+|---|---|
+|Schema source of truth|data_dictionary.md parsed at startup by metadata/parser.py|
+|SQL dialect|T-SQL (SQL Server)|
+|Count strategy|COUNT(DISTINCT pm.hn) via correlated EXISTS — never returns raw rows|
+|AND/OR/NOT|Composable CriteriaGroup with operator + negate fields|
+|State management|Zustand store — serialises directly to CohortDefinition JSON|
+|Persistence|File-based JSON in saved_cohorts/ — swap for DB table in production|
+|DB availability|All routes gracefully degrade if DB is unreachable (SQL still generated)|
+
 ## Regenerating Artifacts
 
 After editing `data_dictionary.md`, regenerate the Excel file and ER diagram:
