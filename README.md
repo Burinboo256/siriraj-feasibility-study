@@ -48,6 +48,25 @@ cohort-app/
 ├── frontend/   Next.js 14 + TypeScript + Tailwind CSS + Zustand (port 3000)
 └── backend/    FastAPI + Python 3.11 + pyodbc → SQL Server (port 8000)
 ```
+```
+  cohort-app/
+  ├── backend/          Python FastAPI — metadata parser, SQL engine, REST API                                                                        
+  │   ├── app/                                                                                                                                        
+  │   │   ├── metadata/  parser.py (reads data_dictionary.md) + catalog.py                                                                            
+  │   │   ├── query/     models.py (Pydantic DSL) + sql_generator.py (T-SQL)                                                                          
+  │   │   ├── api/routes/ cohorts.py · concepts.py · metadata.py                                                                                      
+  │   │   └── db/        connection.py (pyodbc → SQL Server)                                                                                          
+  │   └── examples/use_cases.py    ← 3 researcher examples, no DB needed                                                                              
+  └── frontend/         Next.js 14 + Tailwind + Zustand                                                                                               
+      └── src/                                                                                                                                        
+          ├── store/cohortStore.ts  (global state)                                                                                                    
+          ├── lib/types.ts + api.ts (typed API client)                                                                                                
+          └── components/                                                                                                                             
+              ├── ConceptBrowser/   search ICD / lab / drug                                                                                           
+              ├── QueryBuilder/     INCLUDE + EXCLUDE criteria                                                                                        
+              ├── FeasibilityPanel/ count button + save                                                                                               
+              └── SQLPreview/       generated T-SQL display     
+```
 
 **Data flow:** Frontend (Zustand store) → JSON POST → FastAPI → T-SQL → `SiIMC_MGHT` SQL Server.
 
