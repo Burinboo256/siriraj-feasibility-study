@@ -1,0 +1,7 @@
+.DS_Store
+Safe_DataSet.xlsx
+~$*
+__pycache__/
+*.pyc
+.env
+cohort-app/backend/saved_cohorts/*.json
